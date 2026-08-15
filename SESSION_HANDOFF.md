@@ -1,4 +1,4 @@
-Session Handoff
+# Session Handoff
 
 MANDATORY
 
@@ -8,7 +8,7 @@ Repository continuity depends on this file.
 
 ---
 
-Session Start
+## Session Start
 
 Date: 2026-08-14
 
@@ -18,65 +18,102 @@ Branch: main
 
 Starting Objective:
 
-Establish repository governance, continuity controls, and onboarding artifacts for Active Invariant Cloning (AIC).
+Establish repository governance, continuity controls, onboarding artifacts, and begin specification development for Active Invariant Cloning (AIC).
 
 ---
 
-Work Completed
+## Work Completed
 
 - Created CHANGE_CONTROL.md
 - Created PROJECT_STRUCTURE.md
 - Created COLLABORATION_PROTOCOL.md
-- Established repository governance model
-- Established repository continuity procedures
-- Established contributor onboarding procedures
-- Confirmed repository-first continuity model
-- Confirmed evidence-first development philosophy
+- Created OPEN_QUESTIONS.md
+- Created FOUNDERS_NOTES.md
+- Created MOBILE_CONTRIBUTION_RULES.md
+- Created docs/AIC_SPECIFICATION.md
+- Created docs/CLONE_MODEL.md
+- Created docs/CLONE_LIFECYCLE.md
+- Created docs/SEMANTIC_EQUIVALENCE.md
+- Created docs/DRIFT_DETECTION.md
+- Created docs/GOVERNED_EXECUTION.md
+- Created docs/GLOSSARY.md
+- Created docs/CLONE_LEGITIMACY.md
+- Created docs/CLONE_SURVIVABILITY.md
+- Established repository governance model.
+- Established repository continuity procedures.
+- Established contributor onboarding procedures.
+- Established mobile-first repository editing workflow.
+- Confirmed repository-first continuity model.
+- Confirmed evidence-first development philosophy.
+- Began formal AIC specification development.
 
 ---
 
-Files Modified
+## Files Modified
 
-None
-
----
-
-Files Added
-
-- CHANGE_CONTROL.md
-- PROJECT_STRUCTURE.md
-- COLLABORATION_PROTOCOL.md
 - SESSION_HANDOFF.md
 
 ---
 
-Discoveries
+## Files Added
 
-- Repository governance requirements mirror successful patterns used in BBIS.
-- Continuity artifacts reduce dependency on conversation history.
+- CHANGE_CONTROL.md
+- PROJECT_STRUCTURE.md
+- COLLABORATION_PROTOCOL.md
+- OPEN_QUESTIONS.md
+- FOUNDERS_NOTES.md
+- MOBILE_CONTRIBUTION_RULES.md
+- docs/AIC_SPECIFICATION.md
+- docs/CLONE_MODEL.md
+- docs/CLONE_LIFECYCLE.md
+- docs/SEMANTIC_EQUIVALENCE.md
+- docs/DRIFT_DETECTION.md
+- docs/GOVERNED_EXECUTION.md
+- docs/GLOSSARY.md
+- docs/CLONE_LEGITIMACY.md
+- docs/CLONE_SURVIVABILITY.md
+
+---
+
+## Discoveries
+
+- Repository governance requirements successfully mirror proven BBIS continuity patterns.
 - Repository-first onboarding improves contributor alignment.
-- AIC remains in initialization and structure-definition phase.
+- Mobile-first workflows significantly reduce editing risk.
+- Full-file replacement procedures improve continuity reliability.
+- AIC specification development can proceed independently from BBIS while maintaining conceptual lineage.
+- The repository has progressed beyond initialization and into specification development.
+- A consolidated specification document will improve mobile workflow, contributor onboarding, continuity, and alignment.
 
 ---
 
-Problems Encountered
+## Problems Encountered
 
-- Repository structure existed primarily as planned documentation rather than implemented files.
-- Governance artifacts required creation before specification work could begin.
+- Mobile editing makes partial-file modifications error-prone.
+- Repository structure required staged creation from the GitHub mobile interface.
+- Continuity procedures required explicit documentation to avoid future contributor drift.
+- Specification content is becoming distributed across multiple files, increasing review overhead on mobile devices.
 
 ---
 
-Decisions Made
+## Decisions Made
 
 - Repository artifacts remain authoritative.
 - MASTER_HANDOFF.md remains continuity synthesis artifact.
 - SESSION_HANDOFF.md remains current-state artifact.
-- Governance and continuity will be established before specification expansion.
-- Repository structure will be built incrementally using mobile-first workflow.
+- Mobile-first editing procedures are now repository policy.
+- Existing files should be reviewed before modification.
+- Full-file replacement is preferred for existing-file edits.
+- Append-only updates are acceptable when appropriate.
+- Mid-file patch editing should be avoided on mobile.
+- Specification development is now the primary focus.
+- AIC_MASTER_SPECIFICATION.md will be created as a consolidated working specification.
+- Individual specification files remain repository artifacts and authoritative references.
+- The master specification becomes the preferred continuity, onboarding, and alignment document for specification work.
 
 ---
 
-Alignment Check
+## Alignment Check
 
 MASTER_HANDOFF Reviewed:
 
@@ -104,37 +141,53 @@ YES
 
 ---
 
-Current Status
+## Current Status
 
-Repository Initialization
+Repository Governance Established
 
-Governance Bootstrap In Progress
+Repository Continuity Established
 
-Continuity Controls Established
+Repository Onboarding Established
+
+Mobile Workflow Established
+
+Specification Development In Progress
+
+Specification Consolidation Planning In Progress
 
 ---
 
-Immediate Next Step
+## Immediate Next Step
+
+Review all existing specification documents.
 
 Create:
 
-OPEN_QUESTIONS.md
+docs/AIC_MASTER_SPECIFICATION.md
+
+The purpose of this document is to consolidate active specification content into a single continuity and alignment artifact.
+
+After creation:
+
+Use AIC_MASTER_SPECIFICATION.md as the primary working specification.
+
+Sub-specification files remain repository artifacts and reference material but should not normally be required for continuity, onboarding, alignment, or routine development unless detailed reference is needed.
 
 Then:
 
-FOUNDERS_NOTES.md
+Identify specification gaps.
 
 Then:
 
-Expand repository structure
+Create remaining specification artifacts.
 
 Then:
 
-Begin specification development
+Prepare prototype-planning phase.
 
 ---
 
-Notes For Next Session
+## Notes For Next Session
 
 FIRST ACTIONS:
 
@@ -142,9 +195,42 @@ FIRST ACTIONS:
 2. Read MASTER_HANDOFF.md
 3. Read CHANGE_CONTROL.md
 4. Read PROJECT_STRUCTURE.md
-5. Review repository file structure
-6. Verify repository alignment
-7. Continue repository development
+5. Read MOBILE_CONTRIBUTION_RULES.md
+6. Read README.md
+7. Verify repository file structure
+8. Verify repository alignment
+
+Verify current contents of:
+
+- README.md
+- MASTER_HANDOFF.md
+- CHANGE_CONTROL.md
+- PROJECT_STRUCTURE.md
+- MOBILE_CONTRIBUTION_RULES.md
+- OPEN_QUESTIONS.md
+- FOUNDERS_NOTES.md
+
+Review active specification files:
+
+- docs/AIC_SPECIFICATION.md
+- docs/CLONE_MODEL.md
+- docs/CLONE_LIFECYCLE.md
+- docs/SEMANTIC_EQUIVALENCE.md
+- docs/DRIFT_DETECTION.md
+- docs/GOVERNED_EXECUTION.md
+- docs/GLOSSARY.md
+- docs/CLONE_LEGITIMACY.md
+- docs/CLONE_SURVIVABILITY.md
+
+Create:
+
+docs/AIC_MASTER_SPECIFICATION.md
+
+using the reviewed documents as source material.
+
+Once established, AIC_MASTER_SPECIFICATION.md becomes the preferred continuity and alignment document for specification work.
+
+Sub-specification documents remain authoritative references but should not normally be required for routine repository continuity.
 
 Do not assume repository state from memory.
 
@@ -154,72 +240,98 @@ Repository artifacts remain authoritative.
 
 ---
 
-Build Goal After Alignment
+## Build Goal After Alignment
 
 Highest Priority:
 
-Complete governance and continuity layer.
+Review existing specification artifacts and create AIC_MASTER_SPECIFICATION.md.
 
 Secondary Priority:
 
-Begin specification development.
+Identify specification gaps and remaining specification requirements.
 
 Target:
 
-Prepare repository for implementation and validation work.
+Establish a single primary specification document for continuity, onboarding, alignment, and future development before prototype planning begins.
 
 ---
 
-Session Close Review
+## Session Close Review
 
-Previous State
+### Previous State
 
-Repository contained foundational identity artifacts but lacked complete governance and continuity controls.
+Repository contained foundational identity artifacts and was establishing governance and continuity controls.
 
-Work Performed
+### Work Performed
 
-- Created governance artifacts.
-- Defined repository structure.
-- Defined collaboration procedures.
-- Established continuity controls.
+- Completed governance layer.
+- Completed continuity layer.
+- Completed onboarding layer.
+- Established mobile contribution workflow.
+- Created core specification documents.
+- Created survivability and legitimacy specifications.
+- Transitioned repository into specification-development phase.
+- Identified the need for a consolidated master specification.
 
-Discoveries
+### Discoveries
 
-- Repository alignment with BBIS structure improves continuity.
-- Governance-first development reduces future scope drift.
+- Mobile-first workflows improve continuity reliability.
+- Repository alignment remains stable.
+- Specification hierarchy is emerging cleanly.
+- Governance-first development reduced future organizational risk.
+- A consolidated specification document will simplify future development and onboarding.
 
-Repository Impact
+### Repository Impact
 
 Files Added:
 
 - CHANGE_CONTROL.md
 - PROJECT_STRUCTURE.md
 - COLLABORATION_PROTOCOL.md
-- SESSION_HANDOFF.md
+- OPEN_QUESTIONS.md
+- FOUNDERS_NOTES.md
+- MOBILE_CONTRIBUTION_RULES.md
+- docs/AIC_SPECIFICATION.md
+- docs/CLONE_MODEL.md
+- docs/CLONE_LIFECYCLE.md
+- docs/SEMANTIC_EQUIVALENCE.md
+- docs/DRIFT_DETECTION.md
+- docs/GOVERNED_EXECUTION.md
+- docs/GLOSSARY.md
+- docs/CLONE_LEGITIMACY.md
+- docs/CLONE_SURVIVABILITY.md
 
 Files Modified:
 
-None
+- SESSION_HANDOFF.md
 
 Files Removed:
 
 None
 
-Current State
+### Current State
 
-Repository governance layer established.
+Repository governance layer complete.
 
-Continuity layer established.
+Repository continuity layer complete.
 
-Repository remains in initialization phase.
+Repository onboarding layer complete.
 
-Next Build Goal
+Mobile workflow established.
 
-Create remaining root governance and onboarding artifacts.
+Specification development actively underway.
+
+Specification consolidation planned.
+
+Repository remains in research and validation phase.
+
+### Next Build Goal
+
+Review all specification artifacts and create docs/AIC_MASTER_SPECIFICATION.md as the primary specification continuity document.
 
 ---
 
-Session End
+## Session End
 
 Timestamp: 2026-08-14
 
@@ -229,7 +341,7 @@ YES
 
 ---
 
-Session Continuity Rule
+## Session Continuity Rule
 
 The SESSION_HANDOFF.md file is not a cumulative log.
 
@@ -241,7 +353,7 @@ The current version represents the authoritative session state.
 
 ---
 
-Update Procedure
+## Update Procedure
 
 Before updating SESSION_HANDOFF.md:
 
@@ -258,15 +370,24 @@ Always work from the most recent repository version.
 
 ---
 
-AI Contributor Rule
+## AI Contributor Rule
 
 Future AI contributors must:
 
 Request the current SESSION_HANDOFF.md first.
 
+Then review:
+
+- MASTER_HANDOFF.md
+- CHANGE_CONTROL.md
+- PROJECT_STRUCTURE.md
+- MOBILE_CONTRIBUTION_RULES.md
+
+Before producing recommendations.
+
 Do not rely on memory.
 
-Do not rely on conversation history.
+Do not rely on previous conversations.
 
 Do not rely on summaries.
 
@@ -274,7 +395,7 @@ Repository artifacts remain authoritative.
 
 ---
 
-Stevil Continuity Rule
+## Stevil Continuity Rule
 
 Continuity is preserved through repository artifacts.
 
