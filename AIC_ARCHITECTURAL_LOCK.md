@@ -1,0 +1,86 @@
+# AIC ARCHITECTURAL LOCK
+
+STATUS: LOCKED BASELINE
+VERSION: AIC-BASELINE-v1
+
+This document establishes the architectural baseline for Active
+Invariant Cloning (AIC) under the BBIS framework.
+
+Future work MUST:
+
+1. Preserve the locked definitions unless explicitly proposing a
+   new version.
+2. Distinguish architectural changes from implementation changes.
+3. Identify whether a criticism attacks:
+   - the locked definition,
+   - an implementation,
+   - an unstated assumption,
+   - or an empirical hypothesis.
+4. Never convert an unresolved research question into an assumed
+   architectural requirement.
+5. Never present an unvalidated experimental hypothesis as an
+   established result.
+6. Preserve the distinction between:
+   - invariant identity,
+   - refusal capability,
+   - state context,
+   - authorization,
+   - provenance,
+   - continuity,
+   - and terminal state correctness.
+
+PRIMARY LOCKED PROPOSITION
+--------------------------
+
+AIC evaluates governance validity as a function of both terminal
+state correctness and preservation of required refusal capability
+across the declared realization path.
+
+    Validity(S)
+        =
+    StateCorrect(S)
+        AND
+    PathEnforcementIntegrity(S)
+
+CORE FAILURE CLASS
+------------------
+
+    INVALID REALIZATION
+
+A state may be locally and terminally valid while being governance-
+invalid because the required refusal-capable enforcement path was
+broken during realization.
+
+SCOPE PRINCIPLE
+---------------
+
+AIC makes bounded claims.
+
+No claim of universal system-wide irreversibility, universal
+semantic equivalence, complete path discovery, or global correctness
+is implicit.
+
+OPEN QUESTION
+-------------
+
+Attenuation-Latency Governance Dilemma.
+
+This remains an active research problem and is NOT considered solved
+by the baseline.
+
+VERSION CONTROL
+---------------
+
+Any modification to a locked definition requires:
+
+    - new version identifier;
+    - explicit change record;
+    - rationale;
+    - affected claims;
+    - new adversarial review.
+
+A later version does not retroactively alter the conclusions of an
+earlier locked version.
+
+END ARCHITECTURAL LOCK
+======================
