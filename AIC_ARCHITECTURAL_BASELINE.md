@@ -1,0 +1,290 @@
+AIC ARCHITECTURAL BASELINE
+==========================
+
+Status: LOCKED BASELINE
+Version: AIC-BASELINE-v1
+Relationship: AIC operates within BBIS
+
+Purpose:
+Define the minimum invariant core that future audits must
+evaluate rather than silently redefine.
+
+CORE PRINCIPLE
+--------------
+
+AIC evaluates whether required refusal capability remains active,
+binding, and non-bypassable across the defined realization path
+up to the scoped irreversible mutation authority.
+
+AIC does NOT require:
+
+- universal semantic equivalence;
+- complete discovery of every possible execution path;
+- a globally unique irreversible mutation authority;
+- identical state visibility at every boundary;
+- global correctness proofs;
+- synchronous enforcement at every possible system boundary.
+
+AIC DOES require:
+
+- an explicitly defined claim scope;
+- explicitly identified mutation-capable boundaries;
+- identification of the scoped irreversible primitive relevant to
+  the claim;
+- explicit definition of the invariant being preserved;
+- identification of required refusal-capable boundaries;
+- detection of continuity gaps;
+- classification of affected realizations.
+
+CORE VALIDITY MODEL
+-------------------
+
+Traditional terminal-state model:
+
+    Validity(S) = StateCorrect(S)
+
+AIC model:
+
+    Validity(S) =
+        StateCorrect(S)
+        AND
+        PathEnforcementIntegrity(S)
+
+Where:
+
+    StateCorrect(S)
+        = the realized state satisfies the applicable terminal
+          state predicates.
+
+    PathEnforcementIntegrity(S)
+        = every refusal-capable enforcement condition required by
+          the claim remained active and binding across the required
+          realization path.
+
+A state may therefore be:
+
+    semantically valid
+    operationally valid
+    locally policy-compliant
+
+while simultaneously being:
+
+    governance-invalid
+
+if its required enforcement path experienced a continuity failure.
+
+This condition is an INVALID REALIZATION.
+
+INVARIANT DECOMPOSITION
+-----------------------
+
+A governing invariant MAY be decomposed into:
+
+    I(S,M) =
+        P_static(M)
+        AND
+        P_context(S_i,M)
+        AND
+        P_dynamic(S,M)
+
+Where:
+
+    P_static
+        = conditions independent of mutable global state.
+
+    P_context
+        = conditions dependent on boundary-local execution context.
+
+    P_dynamic
+        = conditions requiring authoritative transactional state.
+
+AIC does not require upstream boundaries to reproduce the full
+terminal-state evaluation.
+
+Upstream enforcement is valid when it evaluates predicates whose
+required information is available and whose refusal semantics
+remain binding within the defined scope.
+
+REFUSAL CAPABILITY
+------------------
+
+Refusal Capability is the ability of a boundary to prevent the
+governed mutation from progressing to the next mutation-capable
+stage before the relevant irreversible effect occurs.
+
+A passive observation, audit log, alert, or post-hoc compensating
+action is NOT equivalent to refusal capability.
+
+A boundary may therefore be:
+
+    refusal-capable
+    observational
+    degraded
+    bypassed
+    absent
+
+These states must not be conflated.
+
+CONTINUITY GAP
+--------------
+
+A Continuity Gap exists when a required refusal-capable condition is:
+
+    absent
+    bypassed
+    disabled
+    degraded
+    asynchronous when synchronous refusal is required
+    translated into a non-equivalent condition
+    rendered non-binding
+    or otherwise unable to prevent the governed transition.
+
+A Continuity Gap does not automatically prove that an attack occurred.
+
+It proves that the claimed refusal-continuity guarantee no longer
+holds for the affected path.
+
+INVALID REALIZATION
+-------------------
+
+An Invalid Realization is a realized state whose terminal state
+properties may be valid, but whose derivation path violated a
+required refusal-continuity condition.
+
+Formally:
+
+    InvalidRealization(S) iff
+        StateCorrect(S)
+        AND
+        NOT PathEnforcementIntegrity(S)
+
+This classification is path-dependent.
+
+Provenance may reveal an Invalid Realization.
+
+Authorization may contribute to preventing one.
+
+Integrity may establish that the terminal state was not corrupted.
+
+None of those properties alone is identical to path enforcement
+integrity.
+
+SCOPED TIMA
+-----------
+
+AIC does not require a universal or globally unique TIMA.
+
+TIMA is scoped to the claim being evaluated.
+
+Definition:
+
+    Scoped TIMA =
+        the irreversible mutation primitive relevant to the
+        declared governance claim.
+
+The scope must explicitly state:
+
+- what mutation is being governed;
+- what constitutes irreversible realization;
+- which primitive represents that realization;
+- what lies outside the claim boundary.
+
+A distributed system may therefore contain multiple scoped TIMAs
+for different claims.
+
+AIC makes no claim that one TIMA governs every consequence in the
+entire distributed system.
+
+THREE-BOUNDARY REFINEMENT
+-------------------------
+
+AIC/BBIS analysis may distinguish:
+
+    LRB     Local Refusal Boundary
+    SRB     System-Wide Refusal Boundary
+    TIMA    True / Scoped Irreversible Mutation Authority
+
+These labels describe governance roles, not necessarily fixed
+physical components.
+
+A single architectural component MAY occupy more than one role.
+
+A role MAY also move or change under runtime conditions.
+
+Therefore boundary identification is part of the claim specification
+and must be validated against the actual execution semantics.
+
+NON-GOALS
+---------
+
+AIC does not claim:
+
+    "Every boundary must perform the same check."
+
+    "Every boundary must possess global state."
+
+    "Every boundary must be synchronous."
+
+    "Every distributed system has one universal TIMA."
+
+    "Continuity guarantees semantic correctness."
+
+    "Continuity guarantees physical safety."
+
+    "Continuity guarantees complete path discovery."
+
+    "Continuity guarantees prevention of every possible attack."
+
+REMAINING OPEN PROBLEM
+----------------------
+
+ATTENUATION-LATENCY GOVERNANCE DILEMMA
+
+Increasing synchronous refusal-capable boundaries can increase:
+
+    latency
+    coordination cost
+    availability dependency
+    failure propagation
+
+Making those checks asynchronous may convert them from:
+
+    active refusal
+
+into:
+
+    passive observation
+
+or:
+
+    non-binding speculation.
+
+Potential research direction:
+
+    Speculative Execution
+        +
+    Deferred Commit
+        +
+    Cryptographically verifiable authorization evidence
+
+STATUS:
+
+    OPEN RESEARCH QUESTION
+
+NOT A RESOLVED ARCHITECTURAL FACT.
+
+SCIENTIFIC CLAIM DISCIPLINE
+---------------------------
+
+The following is a TESTABLE HYPOTHESIS, not a demonstrated fact:
+
+    Systems maintaining required refusal-capable invariant
+    continuity should exhibit fewer unauthorized or governance-invalid
+    realizations under specified adversarial fault conditions than
+    otherwise equivalent systems relying only on post-hoc observation.
+
+Experimental validation is required before claiming predictive
+superiority.
+
+END BASELINE
+============
