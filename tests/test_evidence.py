@@ -254,3 +254,53 @@ def test_missing_chain_link_is_rejected():
         [receipt],
         [],
     )
+
+def test_tampered_chain_hash_is_rejected():
+    receipt = make_receipt()
+
+    link = create_evidence_link(
+        receipt,
+        None,
+    )
+
+    tampered = replace(
+        link,
+        chain_hash="tampered-chain-hash",
+    )
+
+    assert not verify_evidence_chain(
+        [receipt],
+        [tampered],
+    )
+
+def test_sequence_number_mismatch_is_rejected():
+    receipt = make_receipt(sequence_number=1)
+
+    link = create_evidence_link(
+        receipt,
+        None,
+    )
+
+    tampered = replace(
+        link,
+        sequence_number=999,
+    )
+
+    assert not verify_evidence_chain(
+        [receipt],
+        [tampered],
+    )
+
+
+def test_extra_chain_link_is_rejected():
+    receipt = make_receipt()
+
+    link = create_evidence_link(
+        receipt,
+        None,
+    )
+
+    assert not verify_evidence_chain(
+        [receipt],
+        [link, link],
+    )
