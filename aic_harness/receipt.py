@@ -245,10 +245,20 @@ def _validate_receipt_fields(
                 "COMMIT receipt requires mutation_hash"
             )
 
+        if not receipt_data["composite_valid_predicate"]:
+            raise ReceiptSchemaError(
+                "COMMIT receipt requires composite_valid_predicate=True"
+            )
+
     if receipt_data["terminal_outcome"] == "REFUSE":
         if receipt_data["mutation_hash"] is not None:
             raise ReceiptSchemaError(
                 "REFUSE receipt must not contain mutation_hash"
+            )
+
+        if receipt_data["composite_valid_predicate"]:
+            raise ReceiptSchemaError(
+                "REFUSE receipt requires composite_valid_predicate=False"
             )
 
 

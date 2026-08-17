@@ -39,7 +39,11 @@ def make_receipt(
     *,
     terminal_outcome="COMMIT",
     mutation_hash="mutation-hash",
+    composite_valid_predicate=None,
 ):
+    if composite_valid_predicate is None:
+        composite_valid_predicate = terminal_outcome == "COMMIT"
+
     return create_receipt(
         receipt_id="R-RECEIPT-001",
         timestamp="2026-08-17T00:00:01Z",
@@ -57,7 +61,7 @@ def make_receipt(
         fresh_verified=True,
         authorized_verified=True,
         invariant_verified=True,
-        composite_valid_predicate=True,
+        composite_valid_predicate=composite_valid_predicate,
         terminal_outcome=terminal_outcome,
         reason_code="AUTHORIZED",
         mutation_hash=mutation_hash,
@@ -217,3 +221,35 @@ def test_refusal_receipt_can_be_created():
 
     assert receipt.terminal_outcome == "REFUSE"
     assert receipt.mutation_hash is None
+
+
+def test_commit_cannot_be_signed_with_false_composite_predicate():
+    ticket, private_key, _ = make_ticket()
+
+    with pytest.raises(ReceiptSchemaError):
+        create_receipt(
+            receipt_id="R-CONTRADICTION-001",
+            timestamp="2026-08-17T00:00:01Z",
+            terminal_authority="terminal-1",
+            ticket_id=ticket.ticket_id,
+            ticket_hash=ticket.ticket_hash(),
+            invariant_id=ticket.invariant_id,
+            invariant_version=ticket.invariant_version,
+            payload_hash=ticket.payload_hash,
+            tool=ticket.tool,
+            observed_epoch=ticket.epoch,
+            observed_state_hash="state-hash",
+            nonce=ticket.nonce,
+            bound_verified=True,
+            fresh_verified=True,
+            authorized_verified=True,
+            invariant_verified=True,
+            composite_valid_predicate=False,
+            terminal_outcome="COMMIT",
+            reason_code="AUTHORIZED",
+            mutation_hash="mutation-hash",
+            causal_trace_id="trace-001",
+            sequence_number=1,
+            previous_receipt_hash=None,
+            private_key_hex=private_key,
+        )
