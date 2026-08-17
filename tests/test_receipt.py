@@ -253,3 +253,31 @@ def test_commit_cannot_be_signed_with_false_composite_predicate():
             previous_receipt_hash=None,
             private_key_hex=private_key,
         )
+
+
+def test_receipt_hash_and_signature_verify_independently():
+    from aic_harness.canonical import canonicalize
+    from aic_harness.crypto import sha256_hex, verify
+
+    ticket, private_key, public_key = make_ticket()
+
+    receipt = make_receipt(
+        ticket,
+        private_key,
+    )
+
+    unsigned = receipt.unsigned_dict()
+
+    expected_receipt_hash = sha256_hex(
+        canonicalize(unsigned)
+    )
+
+    assert receipt.receipt_hash == expected_receipt_hash
+
+    signed_body = receipt.signed_dict()
+
+    assert verify(
+        public_key,
+        receipt.signature,
+        canonicalize(signed_body),
+    )
