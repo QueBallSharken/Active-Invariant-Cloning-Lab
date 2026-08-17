@@ -97,6 +97,7 @@ def test_two_link_chain_verifies():
 
     second = make_receipt(
         sequence_number=2,
+        previous_receipt_hash=first.receipt_hash,
     )
 
     second_link = create_evidence_link(
@@ -303,4 +304,27 @@ def test_extra_chain_link_is_rejected():
     assert not verify_evidence_chain(
         [receipt],
         [link, link],
+    )
+
+def test_previous_receipt_hash_mismatch_is_rejected():
+    first = make_receipt(sequence_number=1)
+
+    first_link = create_evidence_link(
+        first,
+        None,
+    )
+
+    second = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash="fake-previous-hash",
+    )
+
+    second_link = create_evidence_link(
+        second,
+        first_link.chain_hash,
+    )
+
+    assert not verify_evidence_chain(
+        [first, second],
+        [first_link, second_link],
     )

@@ -221,6 +221,7 @@ def verify_evidence_chain(
 
     previous_hash: Optional[str] = None
     previous_sequence: Optional[int] = None
+    previous_receipt_hash: Optional[str] = None
 
     for receipt, link in zip(receipt_list, chain_list):
         if receipt.sequence_number != link.sequence_number:
@@ -247,11 +248,18 @@ def verify_evidence_chain(
         if link.previous_chain_hash != previous_hash:
             return False
 
+        if (
+            receipt.previous_receipt_hash
+            != previous_receipt_hash
+        ):
+            return False
+
         if not verify_evidence_link(link):
             return False
 
         previous_hash = link.chain_hash
         previous_sequence = receipt.sequence_number
+        previous_receipt_hash = receipt.receipt_hash
 
     return True
 
