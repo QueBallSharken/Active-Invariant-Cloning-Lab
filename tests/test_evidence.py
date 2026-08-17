@@ -16,11 +16,12 @@ def make_receipt(
     sequence_number=1,
     previous_receipt_hash=None,
     terminal_outcome="COMMIT",
+    chain_id="EVIDENCE",
 ):
     private_key, public_key = generate_keypair()
 
     ticket_data = {
-        "ticket_id": f"T-EVIDENCE-{sequence_number}",
+        "ticket_id": f"T-{chain_id}-{sequence_number}",
         "subject": "subject-1",
         "object": "object-1",
         "action": "mutate",
@@ -43,7 +44,7 @@ def make_receipt(
     )
 
     receipt = create_receipt(
-        receipt_id=f"R-EVIDENCE-{sequence_number}",
+        receipt_id=f"R-{chain_id}-{sequence_number}",
         timestamp="2026-08-17T00:00:01Z",
         terminal_authority="terminal-1",
         ticket_id=ticket.ticket_id,
@@ -67,7 +68,7 @@ def make_receipt(
             else "DENIED"
         ),
         mutation_hash=mutation_hash,
-        causal_trace_id=f"trace-{sequence_number}",
+        causal_trace_id=f"trace-{chain_id}-{sequence_number}",
         sequence_number=sequence_number,
         previous_receipt_hash=previous_receipt_hash,
         private_key_hex=private_key,
@@ -328,3 +329,367 @@ def test_previous_receipt_hash_mismatch_is_rejected():
         [first, second],
         [first_link, second_link],
     )
+
+def test_receipt_order_swap_is_rejected():
+    first = make_receipt(sequence_number=1)
+    first_link = create_evidence_link(first, None)
+
+    second = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=first.receipt_hash,
+    )
+    second_link = create_evidence_link(
+        second,
+        first_link.chain_hash,
+    )
+
+    assert not verify_evidence_chain(
+        [second, first],
+        [second_link, first_link],
+    )
+
+def test_cross_chain_splice_is_rejected():
+    a1 = make_receipt(sequence_number=1)
+    a1_link = create_evidence_link(a1, None)
+
+    a2 = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=a1.receipt_hash,
+    )
+    a2_link = create_evidence_link(
+        a2,
+        a1_link.chain_hash,
+    )
+
+    b1 = make_receipt(sequence_number=1, chain_id="B")
+    b1_link = create_evidence_link(b1, None)
+
+    b2 = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=b1.receipt_hash,
+        chain_id="B",
+    )
+    b2_link = create_evidence_link(
+        b2,
+        b1_link.chain_hash,
+    )
+
+    assert not verify_evidence_chain(
+        [a1, a2],
+        [a1_link, b2_link],
+    )
+
+def test_replayed_receipt_is_rejected():
+    first = make_receipt(sequence_number=1)
+    first_link = create_evidence_link(first, None)
+
+    second = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=first.receipt_hash,
+    )
+    second_link = create_evidence_link(
+        second,
+        first_link.chain_hash,
+    )
+
+    assert verify_evidence_chain(
+        [first, second],
+        [first_link, second_link],
+    )
+
+    assert not verify_evidence_chain(
+        [first, second, second],
+        [first_link, second_link, second_link],
+    )
+
+def test_foreign_continuation_is_rejected():
+    a1 = make_receipt(sequence_number=1, chain_id="A")
+    a1_link = create_evidence_link(a1, None)
+
+    a2 = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=a1.receipt_hash,
+        chain_id="A",
+    )
+    a2_link = create_evidence_link(
+        a2,
+        a1_link.chain_hash,
+    )
+
+    b1 = make_receipt(sequence_number=1, chain_id="B")
+    b1_link = create_evidence_link(b1, None)
+
+    b2 = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=b1.receipt_hash,
+        chain_id="B",
+    )
+    b2_link = create_evidence_link(
+        b2,
+        b1_link.chain_hash,
+    )
+
+    b3 = make_receipt(
+        sequence_number=3,
+        previous_receipt_hash=b2.receipt_hash,
+        chain_id="B",
+    )
+    b3_link = create_evidence_link(
+        b3,
+        b2_link.chain_hash,
+    )
+
+    assert not verify_evidence_chain(
+        [a1, a2, b3],
+        [a1_link, a2_link, b3_link],
+    )
+
+def test_tampered_predecessor_is_rejected():
+    first = make_receipt(sequence_number=1)
+    first_link = create_evidence_link(first, None)
+
+    second = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=first.receipt_hash,
+    )
+    second_link = create_evidence_link(
+        second,
+        first_link.chain_hash,
+    )
+
+    tampered_first = replace(
+        first,
+        terminal_outcome="REFUSE",
+    )
+
+    assert not verify_evidence_chain(
+        [tampered_first, second],
+        [first_link, second_link],
+    )
+
+def test_tampered_middle_receipt_is_rejected():
+    first = make_receipt(sequence_number=1)
+    first_link = create_evidence_link(first, None)
+
+    second = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=first.receipt_hash,
+    )
+    second_link = create_evidence_link(
+        second,
+        first_link.chain_hash,
+    )
+
+    third = make_receipt(
+        sequence_number=3,
+        previous_receipt_hash=second.receipt_hash,
+    )
+    third_link = create_evidence_link(
+        third,
+        second_link.chain_hash,
+    )
+
+    tampered_second = replace(
+        second,
+        terminal_outcome="REFUSE",
+    )
+
+    assert not verify_evidence_chain(
+        [first, tampered_second, third],
+        [first_link, second_link, third_link],
+    )
+
+def test_chain_head_substitution_is_rejected():
+    first = make_receipt(sequence_number=1)
+    first_link = create_evidence_link(first, None)
+
+    second = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=first.receipt_hash,
+    )
+    second_link = create_evidence_link(
+        second,
+        first_link.chain_hash,
+    )
+
+    foreign_root = make_receipt(
+        sequence_number=1,
+        terminal_outcome="REFUSE",
+    )
+    foreign_root_link = create_evidence_link(
+        foreign_root,
+        None,
+    )
+
+    assert not verify_evidence_chain(
+        [first, second],
+        [foreign_root_link, second_link],
+    )
+
+def test_foreign_middle_link_substitution_is_rejected():
+    a1 = make_receipt(sequence_number=1)
+    a1_link = create_evidence_link(a1, None)
+
+    a2 = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=a1.receipt_hash,
+    )
+    a2_link = create_evidence_link(
+        a2,
+        a1_link.chain_hash,
+    )
+
+    a3 = make_receipt(
+        sequence_number=3,
+        previous_receipt_hash=a2.receipt_hash,
+    )
+    a3_link = create_evidence_link(
+        a3,
+        a2_link.chain_hash,
+    )
+
+    b2 = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=a1.receipt_hash,
+        terminal_outcome="REFUSE",
+    )
+    b2_link = create_evidence_link(
+        b2,
+        a1_link.chain_hash,
+    )
+
+    assert not verify_evidence_chain(
+        [a1, a2, a3],
+        [a1_link, b2_link, a3_link],
+    )
+
+def test_foreign_terminal_link_substitution_is_rejected():
+    first = make_receipt(sequence_number=1)
+    first_link = create_evidence_link(first, None)
+
+    second = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=first.receipt_hash,
+    )
+    second_link = create_evidence_link(
+        second,
+        first_link.chain_hash,
+    )
+
+    foreign = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash=first.receipt_hash,
+        terminal_outcome="REFUSE",
+    )
+    foreign_link = create_evidence_link(
+        foreign,
+        first_link.chain_hash,
+    )
+
+    assert not verify_evidence_chain(
+        [first, second],
+        [first_link, foreign_link],
+    )
+
+def test_previous_receipt_pointer_forgery_is_rejected():
+    first = make_receipt(sequence_number=1)
+    first_link = create_evidence_link(first, None)
+
+    second = make_receipt(
+        sequence_number=2,
+        previous_receipt_hash="forged-receipt-hash",
+    )
+    second_link = create_evidence_link(
+        second,
+        first_link.chain_hash,
+    )
+
+    assert not verify_evidence_chain(
+        [first, second],
+        [first_link, second_link],
+    )
+
+def test_receipt_link_cross_pair_substitution_is_rejected():
+    a = make_receipt(
+        sequence_number=1,
+        terminal_outcome="COMMIT",
+    )
+    a_link = create_evidence_link(a, None)
+
+    b = make_receipt(
+        sequence_number=1,
+        terminal_outcome="REFUSE",
+    )
+    b_link = create_evidence_link(b, None)
+
+    assert a.receipt_hash != b.receipt_hash
+
+    assert not verify_evidence_chain(
+        [a],
+        [b_link],
+    )
+
+
+def make_receipt_with_key(
+    sequence_number=1,
+    previous_receipt_hash=None,
+    terminal_outcome="COMMIT",
+    chain_id="EVIDENCE",
+):
+    private_key, public_key = generate_keypair()
+
+    ticket_data = {
+        "ticket_id": f"T-{chain_id}-{sequence_number}",
+        "subject": "subject-1",
+        "object": "object-1",
+        "action": "mutate",
+        "payload_hash": "payload-hash",
+        "tool": "test-tool",
+        "epoch": 1,
+        "nonce": sequence_number,
+        "invariant_id": "INV-001",
+        "invariant_version": "1",
+        "scope": "test",
+        "issued_at": "2026-08-17T00:00:00Z",
+    }
+
+    ticket = create_ticket(ticket_data, private_key)
+
+    mutation_hash = (
+        "mutation-hash"
+        if terminal_outcome == "COMMIT"
+        else None
+    )
+
+    receipt = create_receipt(
+        receipt_id=f"R-{chain_id}-{sequence_number}",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash=f"state-hash-{sequence_number}",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=terminal_outcome == "COMMIT",
+        terminal_outcome=terminal_outcome,
+        reason_code=(
+            "AUTHORIZED"
+            if terminal_outcome == "COMMIT"
+            else "DENIED"
+        ),
+        mutation_hash=mutation_hash,
+        causal_trace_id=f"trace-{chain_id}-{sequence_number}",
+        sequence_number=sequence_number,
+        previous_receipt_hash=previous_receipt_hash,
+        private_key_hex=private_key,
+    )
+
+    return receipt, public_key
