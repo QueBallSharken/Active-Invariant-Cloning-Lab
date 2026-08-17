@@ -4,9 +4,7 @@ aic_harness/evidence.py
 Evidence-chain construction and verification for the
 AIC/BBIS V6.4.2 reference harness.
 
-The evidence chain links terminal receipts in sequence.
-
-For receipt n:
+Frozen chain construction:
 
     H_n =
         SHA256(
@@ -17,9 +15,9 @@ For receipt n:
             || H_(n-1)
         )
 
-The chain is independent of terminal decision logic.
+This module owns evidence-chain semantics.
 
-This module does not:
+It does not:
 - evaluate Valid()
 - authorize mutations
 - perform protected mutations
@@ -48,14 +46,6 @@ class EvidenceIntegrityError(EvidenceError):
 class EvidenceLink:
     """
     One cryptographic link in the AIC/BBIS evidence chain.
-
-    The link material follows the frozen V6.4.2 construction:
-
-        decision
-        || ticket_hash
-        || state_hash
-        || receipt_hash
-        || previous_chain_hash
     """
 
     sequence_number: int
@@ -68,27 +58,41 @@ class EvidenceLink:
 
     def material(self) -> bytes:
         """
-        Return the exact bytes used to calculate chain_hash.
+        Return the exact frozen chain material.
 
-        Length-prefix encoding is used so adjacent fields cannot
-        become ambiguous through simple concatenation.
+        The fields are concatenated in the order specified by
+        the V6.4.2 contract.
         """
-        fields = (
-            self.decision,
-            self.ticket_hash,
-            self.state_hash,
-            self.receipt_hash,
-            self.previous_chain_hash or "",
+        return _chain_material(
+            decision=self.decision,
+            ticket_hash=self.ticket_hash,
+            state_hash=self.state_hash,
+            receipt_hash=self.receipt_hash,
+            previous_chain_hash=self.previous_chain_hash,
         )
 
-        output = bytearray()
 
-        for field in fields:
-            encoded = field.encode("utf-8")
-            output.extend(len(encoded).to_bytes(8, "big"))
-            output.extend(encoded)
+def _chain_material(
+    *,
+    decision: str,
+    ticket_hash: str,
+    state_hash: str,
+    receipt_hash: str,
+    previous_chain_hash: Optional[str],
+) -> bytes:
+    """
+    Construct the exact byte sequence specified by V6.4.2.
 
-        return bytes(output)
+    Textual fields are UTF-8 encoded and concatenated directly.
+    The initial chain has an empty previous hash.
+    """
+    return (
+        decision.encode("utf-8")
+        + ticket_hash.encode("utf-8")
+        + state_hash.encode("utf-8")
+        + receipt_hash.encode("utf-8")
+        + (previous_chain_hash or "").encode("utf-8")
+    )
 
 
 def _calculate_chain_hash(
@@ -99,25 +103,16 @@ def _calculate_chain_hash(
     receipt_hash: str,
     previous_chain_hash: Optional[str],
 ) -> str:
-    """
-    Calculate the SHA-256 hash for one evidence-chain link.
-    """
-    fields = (
-        decision,
-        ticket_hash,
-        state_hash,
-        receipt_hash,
-        previous_chain_hash or "",
+    """Calculate one frozen V6.4.2 evidence-chain hash."""
+    return sha256_hex(
+        _chain_material(
+            decision=decision,
+            ticket_hash=ticket_hash,
+            state_hash=state_hash,
+            receipt_hash=receipt_hash,
+            previous_chain_hash=previous_chain_hash,
+        )
     )
-
-    output = bytearray()
-
-    for field in fields:
-        encoded = field.encode("utf-8")
-        output.extend(len(encoded).to_bytes(8, "big"))
-        output.extend(encoded)
-
-    return sha256_hex(bytes(output))
 
 
 def create_evidence_link(
@@ -125,23 +120,19 @@ def create_evidence_link(
     previous_chain_hash: Optional[str],
 ) -> EvidenceLink:
     """
-    Construct one evidence-chain link from a terminal receipt.
-
-    The terminal receipt is treated as already finalized.
+    Construct one evidence-chain link from a finalized receipt.
     """
     if receipt.terminal_outcome not in {"COMMIT", "REFUSE"}:
         raise EvidenceError(
             "receipt has invalid terminal outcome"
         )
 
-    expected_previous = previous_chain_hash
-
     chain_hash = _calculate_chain_hash(
         decision=receipt.terminal_outcome,
         ticket_hash=receipt.ticket_hash,
         state_hash=receipt.observed_state_hash,
         receipt_hash=receipt.receipt_hash,
-        previous_chain_hash=expected_previous,
+        previous_chain_hash=previous_chain_hash,
     )
 
     return EvidenceLink(
@@ -150,7 +141,7 @@ def create_evidence_link(
         ticket_hash=receipt.ticket_hash,
         state_hash=receipt.observed_state_hash,
         receipt_hash=receipt.receipt_hash,
-        previous_chain_hash=expected_previous,
+        previous_chain_hash=previous_chain_hash,
         chain_hash=chain_hash,
     )
 
@@ -181,6 +172,7 @@ def build_evidence_chain(
     Receipts must already be ordered by sequence number.
     """
     chain: list[EvidenceLink] = []
+
     previous_hash: Optional[str] = None
     previous_sequence: Optional[int] = None
 
@@ -212,7 +204,7 @@ def verify_evidence_chain(
     """
     Verify the complete evidence chain against its receipts.
 
-    Verification detects:
+    Detects:
     - modified terminal outcomes
     - modified ticket hashes
     - modified state hashes
