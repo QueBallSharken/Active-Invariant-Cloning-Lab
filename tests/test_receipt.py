@@ -281,3 +281,24 @@ def test_receipt_hash_and_signature_verify_independently():
         receipt.signature,
         canonicalize(signed_body),
     )
+
+
+def test_receipt_signature_rejects_tampered_signed_field():
+    from aic_harness.canonical import canonicalize
+    from aic_harness.crypto import verify
+
+    ticket, private_key, public_key = make_ticket()
+
+    receipt = make_receipt(
+        ticket,
+        private_key,
+    )
+
+    tampered = receipt.signed_dict()
+    tampered["tool"] = "tampered-tool"
+
+    assert not verify(
+        public_key,
+        receipt.signature,
+        canonicalize(tampered),
+    )
