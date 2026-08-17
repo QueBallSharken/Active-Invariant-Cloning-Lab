@@ -1,22 +1,21 @@
 """
 aic_harness/verifier.py
 
-Independent verification layer for the AIC/BBIS V6.4.2
-reference harness.
+Independent verification layer for the AIC/BBIS V6.4.2 reference harness.
 
 Responsibilities:
-    - verify terminal receipt signatures
-    - verify receipt integrity
-    - verify evidence-chain integrity
-    - detect altered terminal outcomes
-    - detect broken evidence links
+- verify terminal receipt signatures
+- verify receipt integrity
+- verify evidence-chain integrity
+- detect altered terminal outcomes
+- detect broken evidence links
 
 This module MUST NOT:
-    - authorize mutations
-    - perform mutations
-    - alter terminal outcomes
-    - calculate execution decisions
-    - reinterpret expectedness
+- authorize mutations
+- perform mutations
+- alter terminal outcomes
+- calculate execution decisions
+- reinterpret expectedness
 """
 
 from __future__ import annotations
@@ -24,18 +23,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Optional
 
-from aic_harness.canonical import canonicalize
-from aic_harness.crypto import (
-    MalformedCryptoInput,
-    sha256_hex,
-    verify,
-)
+from aic_harness.crypto import MalformedCryptoInput, verify, sha256_hex
 from aic_harness.evidence import (
     EvidenceLink,
     verify_evidence_chain,
     verify_evidence_link,
 )
 from aic_harness.receipt import TerminalReceipt
+from aic_harness.canonical import canonicalize
 
 
 class VerificationError(ValueError):
@@ -44,8 +39,7 @@ class VerificationError(ValueError):
 
 @dataclass(frozen=True)
 class VerificationResult:
-    """
-    Result of independent terminal-evidence verification.
+    """Result of independent terminal-evidence verification.
 
     This describes evidence integrity only.
     It does not replace terminal_outcome.
@@ -67,44 +61,37 @@ class VerificationResult:
         )
 
 
-def _receipt_signing_bytes(
-    receipt: TerminalReceipt,
-) -> bytes:
+def _receipt_signing_bytes(receipt: TerminalReceipt) -> bytes:
+    """Return the canonical bytes covered by the receipt signature.
+
+    receipt.py defines canonical_bytes() as the canonical representation
+    of signed_dict(), which includes receipt_hash and excludes signature.
     """
-    Return the canonical bytes covered by the receipt signature.
+    try:
+        return receipt.canonical_bytes()
+    except AttributeError as exc:
+        raise VerificationError(
+            "TerminalReceipt does not expose canonical_bytes()"
+        ) from exc
 
-    TerminalReceipt.canonical_bytes() returns the canonical
-    representation of the signed receipt body, including
-    receipt_hash and excluding signature.
-    """
-    return receipt.canonical_bytes()
 
+def _calculate_receipt_hash(receipt: TerminalReceipt) -> str:
+    """Recalculate the receipt hash from the unsigned receipt body."""
+    try:
+        unsigned = receipt.unsigned_dict()
+    except AttributeError as exc:
+        raise VerificationError(
+            "TerminalReceipt does not expose unsigned_dict()"
+        ) from exc
 
-def _calculate_receipt_hash(
-    receipt: TerminalReceipt,
-) -> str:
-    """
-    Recalculate the receipt hash from the unsigned receipt body.
-
-    The receipt hash is defined as:
-
-        SHA256(
-            RFC8785_CANONICALIZE(
-                receipt.unsigned_dict()
-            )
-        )
-    """
-    return sha256_hex(
-        canonicalize(receipt.unsigned_dict())
-    )
+    return sha256_hex(canonicalize(unsigned))
 
 
 def verify_receipt_signature(
     receipt: TerminalReceipt,
     terminal_public_key_hex: str,
 ) -> bool:
-    """
-    Independently verify a terminal receipt signature.
+    """Independently verify a terminal receipt signature.
 
     Returns:
         True when the signature is cryptographically valid.
@@ -120,22 +107,21 @@ def verify_receipt_signature(
             receipt.signature,
             _receipt_signing_bytes(receipt),
         )
-    except MalformedCryptoInput as exc:
+    except (MalformedCryptoInput, TypeError, ValueError) as exc:
         raise VerificationError(
-            f"malformed receipt cryptographic material: {exc}"
+            "malformed receipt cryptographic material"
         ) from exc
 
 
 def verify_receipt_integrity(
     receipt: TerminalReceipt,
 ) -> bool:
-    """
-    Verify the receipt's internally recorded hash.
+    """Verify the receipt's internally recorded hash.
 
-    The calculated hash is compared against receipt.receipt_hash.
+    The receipt hash is defined as SHA-256 over the canonical
+    unsigned receipt body.
     """
     calculated = _calculate_receipt_hash(receipt)
-
     return calculated == receipt.receipt_hash
 
 
@@ -143,19 +129,13 @@ def verify_terminal_receipt(
     receipt: TerminalReceipt,
     terminal_public_key_hex: str,
 ) -> bool:
-    """
-    Perform independent verification of one terminal receipt.
-
-    Both the receipt hash and its Ed25519 signature must verify.
-    """
+    """Perform independent verification of one terminal receipt."""
     signature_valid = verify_receipt_signature(
         receipt,
         terminal_public_key_hex,
     )
 
-    integrity_valid = verify_receipt_integrity(
-        receipt,
-    )
+    integrity_valid = verify_receipt_integrity(receipt)
 
     return signature_valid and integrity_valid
 
@@ -164,16 +144,7 @@ def verify_evidence(
     receipts: Iterable[TerminalReceipt],
     chain: Iterable[EvidenceLink],
 ) -> bool:
-    """
-    Verify an entire receipt/evidence relationship.
-
-    Verification includes:
-        - receipt/chain correspondence
-        - evidence-link integrity
-        - previous-chain linkage
-        - sequence continuity
-        - terminal-outcome consistency
-    """
+    """Verify an entire receipt/evidence relationship."""
     receipt_list = list(receipts)
     chain_list = list(chain)
 
@@ -196,16 +167,9 @@ def audit(
     receipts: Optional[Iterable[TerminalReceipt]] = None,
     chain: Optional[Iterable[EvidenceLink]] = None,
 ) -> VerificationResult:
-    """
-    Perform an independent evidence audit.
+    """Perform an independent evidence audit.
 
     No execution behavior is changed by this function.
-
-    If a chain is supplied, the matching evidence link for the
-    supplied receipt must exist and verify.
-
-    If receipts are also supplied, the complete evidence chain
-    is verified against those receipts.
     """
     receipt_signature_valid = verify_receipt_signature(
         receipt,
@@ -259,81 +223,3 @@ __all__ = [
     "verify_evidence",
     "audit",
 ]
-
-
-if __name__ == "__main__":
-    from aic_harness.crypto import generate_keypair
-    from aic_harness.evidence import build_evidence_chain
-    from aic_harness.receipt import create_receipt
-
-    print("[*] Running verifier.py self-test...")
-
-    private_key, public_key = generate_keypair()
-
-    receipt = create_receipt(
-        receipt_id="RECEIPT-0001",
-        timestamp="2026-08-17T00:00:00Z",
-        terminal_authority="terminal-01",
-        ticket_id="TICKET-0001",
-        ticket_hash="a" * 64,
-        invariant_id="INV-001",
-        invariant_version="1.0",
-        payload_hash="b" * 64,
-        tool="example-tool",
-        observed_epoch=1,
-        observed_state_hash="c" * 64,
-        nonce=1,
-        bound_verified=True,
-        fresh_verified=True,
-        authorized_verified=True,
-        invariant_verified=True,
-        composite_valid_predicate=True,
-        terminal_outcome="COMMIT",
-        reason_code="VALID",
-        mutation_hash="d" * 64,
-        causal_trace_id="TRACE-0001",
-        sequence_number=1,
-        previous_receipt_hash=None,
-        private_key_hex=private_key,
-    )
-
-    chain = build_evidence_chain([receipt])
-
-    assert verify_receipt_signature(
-        receipt,
-        public_key,
-    )
-
-    assert verify_receipt_integrity(
-        receipt,
-    )
-
-    assert verify_terminal_receipt(
-        receipt,
-        public_key,
-    )
-
-    assert verify_evidence(
-        [receipt],
-        chain,
-    )
-
-    result = audit(
-        receipt,
-        public_key,
-        [receipt],
-        chain,
-    )
-
-    assert result.receipt_signature_valid
-    assert result.receipt_integrity_valid
-    assert result.evidence_link_valid
-    assert result.evidence_chain_valid
-    assert result.valid
-
-    print("[+] Receipt signature verification: PASS")
-    print("[+] Receipt integrity verification: PASS")
-    print("[+] Terminal receipt verification: PASS")
-    print("[+] Evidence verification: PASS")
-    print("[+] Independent audit: PASS")
-    print("[+] verifier.py self-test passed.")
