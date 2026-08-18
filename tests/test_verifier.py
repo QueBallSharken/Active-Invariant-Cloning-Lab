@@ -943,3 +943,23 @@ def test_full_valid_receipt_evidence_pair_remains_valid():
         [receipt],
         [link],
     )
+
+def test_verify_evidence_chain_rejects_swapped_order():
+    r1, _ = make_receipt_with_key(
+        sequence_number=1,
+        chain_id="SWAP",
+    )
+
+    r2, _ = make_receipt_with_key(
+        sequence_number=2,
+        previous_receipt_hash=r1.receipt_hash,
+        chain_id="SWAP",
+    )
+
+    l1 = create_evidence_link(r1, None)
+    l2 = create_evidence_link(r2, l1.chain_hash)
+
+    assert not verify_evidence_chain(
+        [r2, r1],
+        [l1, l2],
+    )
