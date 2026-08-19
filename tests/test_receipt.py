@@ -302,3 +302,35 @@ def test_receipt_signature_rejects_tampered_signed_field():
         receipt.signature,
         canonicalize(tampered),
     )
+
+def test_receipt_boundary_detects_invariant_continuity_break():
+    ticket, private_key, public_key = make_ticket()
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-BOUNDARY-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id="INV-ATTACK",
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert receipt.invariant_id != ticket.invariant_id
