@@ -8,401 +8,361 @@ Repository continuity depends on this file.
 
 ---
 
-## Session Start
+## Session Checkpoint
 
-Date: 2026-08-14
+Date: 2026-08-18
 
 Contributor: Steven Kyle Hensley (QueBallSharken)
 
 Branch: main
 
-Starting Objective:
+Current Commit:
 
-Establish repository governance, continuity controls, onboarding artifacts, and begin specification development for Active Invariant Cloning (AIC).
+db3d9f7 Update master handoff with empirical findings
 
----
+Repository State:
 
-## Work Completed
-
-- Created CHANGE_CONTROL.md
-- Created PROJECT_STRUCTURE.md
-- Created COLLABORATION_PROTOCOL.md
-- Created OPEN_QUESTIONS.md
-- Created FOUNDERS_NOTES.md
-- Created MOBILE_CONTRIBUTION_RULES.md
-- Created docs/AIC_SPECIFICATION.md
-- Created docs/CLONE_MODEL.md
-- Created docs/CLONE_LIFECYCLE.md
-- Created docs/SEMANTIC_EQUIVALENCE.md
-- Created docs/DRIFT_DETECTION.md
-- Created docs/GOVERNED_EXECUTION.md
-- Created docs/GLOSSARY.md
-- Created docs/CLONE_LEGITIMACY.md
-- Created docs/CLONE_SURVIVABILITY.md
-- Established repository governance model.
-- Established repository continuity procedures.
-- Established contributor onboarding procedures.
-- Established mobile-first repository editing workflow.
-- Confirmed repository-first continuity model.
-- Confirmed evidence-first development philosophy.
-- Began formal AIC specification development.
+- Working tree clean
+- Full test suite: 109 passed
+- Branch is ahead of origin/main by 6 commits
+- No uncommitted changes
 
 ---
 
-## Files Modified
+## Current Research Phase
 
+Empirical Boundary Analysis
+
+The repository has progressed beyond:
+
+- Initialization
+- Governance establishment
+- Specification development
+- Prototype development
+
+and is now performing executable adversarial testing of invariant
+continuity across mutation-capable boundaries.
+
+---
+
+## Current Research Objective
+
+Determine where invariant identity can diverge from the originating
+governing artifact while existing cryptographic, receipt, terminal,
+and evidence-chain verification mechanisms continue to accept the
+resulting state.
+
+The current method is:
+
+1. Construct the smallest adversarial case.
+2. Execute it against the current harness.
+3. Record the observed behavior.
+4. Preserve the behavior as an executable regression test.
+5. Run the complete regression suite.
+6. Commit the evidence.
+7. Only then consider implementation changes.
+
+---
+
+## Work Completed This Research Cycle
+
+### Ticket-to-Receipt Boundary
+
+Established executable evidence that a receipt can currently contain
+a different invariant identity from its originating ticket while
+retaining the ticket hash and other relevant ticket-derived fields.
+
+Observed state:
+
+    ticket.invariant_id  = INV-001
+    receipt.invariant_id = INV-ATTACKED
+
+The receipt can still be:
+
+- Created
+- Signed
+- Hash-validated
+
+This demonstrates that cryptographic integrity does not by itself
+establish invariant identity continuity.
+
+---
+
+### Terminal Verification Boundary
+
+Established an executable test showing that the current terminal
+receipt verifier accepts a receipt whose invariant identity differs
+from the originating ticket.
+
+The current verifier performs:
+
+- Receipt signature verification
+- Receipt integrity verification
+
+It does not independently perform a ticket-aware comparison of
+invariant identity.
+
+The substituted receipt therefore passes:
+
+- verify_receipt_signature()
+- verify_receipt_integrity()
+- verify_terminal_receipt()
+
+This is an observed property of the current implementation.
+
+---
+
+### Evidence-Chain Boundary
+
+Established executable evidence that the current evidence-chain
+mechanism can accept a receipt with substituted invariant identity.
+
+The current EvidenceLink binds the receipt to the ticket through
+ticket_hash but does not independently carry invariant identity
+fields.
+
+Therefore a receipt containing:
+
+    invariant_id = INV-ATTACKED
+
+can still produce a valid evidence link and pass evidence-chain
+verification when the ticket hash remains unchanged.
+
+---
+
+## Test Evidence
+
+Current full regression result:
+
+    109 passed
+
+Relevant focused tests include:
+
+- Ticket/receipt invariant substitution
+- Terminal verifier acceptance of substituted invariant
+- Evidence-chain acceptance of substituted invariant
+
+The adversarial cases are preserved as executable tests rather than
+being represented only as narrative claims.
+
+---
+
+## Repository Findings
+
+### Finding 1 — Cryptographic integrity is not invariant continuity
+
+A valid signature proves that the signed receipt was not altered
+after signing.
+
+A valid receipt hash proves that the receipt body matches its
+recorded hash.
+
+Neither check independently proves that the receipt's invariant
+identity matches the invariant identity of the originating ticket.
+
+---
+
+### Finding 2 — Ticket hash binding is insufficient by itself
+
+The current receipt retains the originating ticket hash.
+
+However, the receipt's independently recorded invariant identity can
+differ from the ticket's invariant identity without invalidating the
+receipt's cryptographic checks.
+
+Therefore ticket-hash linkage does not currently establish invariant
+identity continuity.
+
+---
+
+### Finding 3 — Evidence-chain verification does not currently establish
+invariant identity continuity
+
+EvidenceLink currently contains no independent invariant identity
+fields.
+
+The evidence-chain verifier can therefore validate the structural
+chain while remaining unaware of a receipt/ticket invariant identity
+substitution.
+
+---
+
+## Important Research Boundary
+
+These findings describe the current AIC reference harness.
+
+They do NOT establish:
+
+- Universal failure of all architectures
+- Universal impossibility of invariant continuity
+- That AIC itself has already been proven
+- That every implementation has the same weakness
+
+The current result is narrower:
+
+The present harness contains identifiable verification boundaries
+where invariant identity continuity is not independently enforced.
+
+---
+
+## Files Changed During Current Research Cycle
+
+### Tests
+
+- tests/test_receipt.py
+- tests/test_evidence.py
+- tests/test_verifier.py
+
+### Continuity Artifacts
+
+- MASTER_HANDOFF.md
 - SESSION_HANDOFF.md
 
 ---
 
-## Files Added
+## Recent Commits
 
-- CHANGE_CONTROL.md
-- PROJECT_STRUCTURE.md
-- COLLABORATION_PROTOCOL.md
-- OPEN_QUESTIONS.md
-- FOUNDERS_NOTES.md
-- MOBILE_CONTRIBUTION_RULES.md
-- docs/AIC_SPECIFICATION.md
-- docs/CLONE_MODEL.md
-- docs/CLONE_LIFECYCLE.md
-- docs/SEMANTIC_EQUIVALENCE.md
-- docs/DRIFT_DETECTION.md
-- docs/GOVERNED_EXECUTION.md
-- docs/GLOSSARY.md
-- docs/CLONE_LEGITIMACY.md
-- docs/CLONE_SURVIVABILITY.md
+Relevant research commits include:
+
+- Add invariant continuity substitution tests
+- Add terminal invariant continuity substitution proof
+- Update master handoff with empirical findings
+
+The exact repository history remains authoritative through Git.
 
 ---
 
-## Discoveries
+## Current Production-Code Status
 
-- Repository governance requirements successfully mirror proven BBIS continuity patterns.
-- Repository-first onboarding improves contributor alignment.
-- Mobile-first workflows significantly reduce editing risk.
-- Full-file replacement procedures improve continuity reliability.
-- AIC specification development can proceed independently from BBIS while maintaining conceptual lineage.
-- The repository has progressed beyond initialization and into specification development.
-- A consolidated specification document will improve mobile workflow, contributor onboarding, continuity, and alignment.
+No production verification behavior has been changed as a result of
+these findings.
 
----
+The current work intentionally preserves the observed behavior and
+captures it as executable evidence before proposing enforcement
+changes.
 
-## Problems Encountered
+This separation is important:
 
-- Mobile editing makes partial-file modifications error-prone.
-- Repository structure required staged creation from the GitHub mobile interface.
-- Continuity procedures required explicit documentation to avoid future contributor drift.
-- Specification content is becoming distributed across multiple files, increasing review overhead on mobile devices.
+Observation first.
+
+Enforcement second.
 
 ---
 
-## Decisions Made
+## Current Open Questions
 
-- Repository artifacts remain authoritative.
-- MASTER_HANDOFF.md remains continuity synthesis artifact.
-- SESSION_HANDOFF.md remains current-state artifact.
-- Mobile-first editing procedures are now repository policy.
-- Existing files should be reviewed before modification.
-- Full-file replacement is preferred for existing-file edits.
-- Append-only updates are acceptable when appropriate.
-- Mid-file patch editing should be avoided on mobile.
-- Specification development is now the primary focus.
-- AIC_MASTER_SPECIFICATION.md will be created as a consolidated working specification.
-- Individual specification files remain repository artifacts and authoritative references.
-- The master specification becomes the preferred continuity, onboarding, and alignment document for specification work.
+1. What artifact is the authoritative source of invariant identity at
+   each mutation-capable boundary?
 
----
+2. Where should invariant identity continuity be structurally bound?
 
-## Alignment Check
+3. Should EvidenceLink explicitly carry invariant identity, invariant
+   version, or another independently verifiable invariant binding?
 
-MASTER_HANDOFF Reviewed:
+4. Should terminal verification remain receipt-local, or require
+   ticket-aware continuity verification?
 
-YES
+5. Which additional mutation-capable boundaries exhibit the same
+   property?
 
-MASTER_HANDOFF Still Accurate:
+6. What is the smallest implementation change that enforces invariant
+   continuity without destroying the empirical regression evidence?
 
-YES
-
-CHANGE_CONTROL Reviewed:
-
-YES
-
-CHANGE_CONTROL Still Accurate:
-
-YES
-
-PROJECT_STRUCTURE Reviewed:
-
-YES
-
-PROJECT_STRUCTURE Still Accurate:
-
-YES
+7. What adversarial substitutions remain possible after each proposed
+   enforcement change?
 
 ---
 
-## Current Status
+## Direction Lock
 
-Repository Governance Established
+Repository purpose:
 
-Repository Continuity Established
+- Discover
+- Implement
+- Test
+- Measure
+- Verify
 
-Repository Onboarding Established
+Do not:
 
-Mobile Workflow Established
-
-Specification Development In Progress
-
-Specification Consolidation Planning In Progress
-
----
-
-## Immediate Next Step
-
-Review all existing specification documents.
-
-Create:
-
-docs/AIC_MASTER_SPECIFICATION.md
-
-The purpose of this document is to consolidate active specification content into a single continuity and alignment artifact.
-
-After creation:
-
-Use AIC_MASTER_SPECIFICATION.md as the primary working specification.
-
-Sub-specification files remain repository artifacts and reference material but should not normally be required for continuity, onboarding, alignment, or routine development unless detailed reference is needed.
-
-Then:
-
-Identify specification gaps.
-
-Then:
-
-Create remaining specification artifacts.
-
-Then:
-
-Prepare prototype-planning phase.
+- Assume success
+- Assume failure
+- Modify production behavior merely to make a test pass
+- Convert an observed implementation gap into a universal claim
+- Remove adversarial tests because they expose an undesirable result
+- Treat AI summaries or conversation history as repository authority
 
 ---
 
-## Notes For Next Session
+## Next Research Step
 
-FIRST ACTIONS:
+Continue empirical boundary analysis.
 
-1. Read SESSION_HANDOFF.md
-2. Read MASTER_HANDOFF.md
-3. Read CHANGE_CONTROL.md
-4. Read PROJECT_STRUCTURE.md
-5. Read MOBILE_CONTRIBUTION_RULES.md
-6. Read README.md
-7. Verify repository file structure
-8. Verify repository alignment
+Priority:
 
-Verify current contents of:
+1. Identify the next mutation-capable boundary.
+2. Construct the smallest substitution or divergence case.
+3. Determine whether current verification accepts it.
+4. Add an executable regression test if the behavior is reproducible.
+5. Run the complete suite.
+6. Commit the evidence.
+7. Only then evaluate enforcement architecture.
 
-- README.md
-- MASTER_HANDOFF.md
-- CHANGE_CONTROL.md
-- PROJECT_STRUCTURE.md
-- MOBILE_CONTRIBUTION_RULES.md
-- OPEN_QUESTIONS.md
-- FOUNDERS_NOTES.md
-
-Review active specification files:
-
-- docs/AIC_SPECIFICATION.md
-- docs/CLONE_MODEL.md
-- docs/CLONE_LIFECYCLE.md
-- docs/SEMANTIC_EQUIVALENCE.md
-- docs/DRIFT_DETECTION.md
-- docs/GOVERNED_EXECUTION.md
-- docs/GLOSSARY.md
-- docs/CLONE_LEGITIMACY.md
-- docs/CLONE_SURVIVABILITY.md
-
-Create:
-
-docs/AIC_MASTER_SPECIFICATION.md
-
-using the reviewed documents as source material.
-
-Once established, AIC_MASTER_SPECIFICATION.md becomes the preferred continuity and alignment document for specification work.
-
-Sub-specification documents remain authoritative references but should not normally be required for routine repository continuity.
-
-Do not assume repository state from memory.
-
-Do not assume repository state from conversations.
-
-Repository artifacts remain authoritative.
+Do not jump directly to implementation fixes.
 
 ---
 
-## Build Goal After Alignment
+## Verification Baseline
 
-Highest Priority:
+Before continuing research, establish:
 
-Review existing specification artifacts and create AIC_MASTER_SPECIFICATION.md.
+    pytest -q
 
-Secondary Priority:
+Expected baseline at this checkpoint:
 
-Identify specification gaps and remaining specification requirements.
+    109 passed
 
-Target:
+Also verify:
 
-Establish a single primary specification document for continuity, onboarding, alignment, and future development before prototype planning begins.
+    git diff --check
+    git status
 
----
+Expected working-tree state:
 
-## Session Close Review
-
-### Previous State
-
-Repository contained foundational identity artifacts and was establishing governance and continuity controls.
-
-### Work Performed
-
-- Completed governance layer.
-- Completed continuity layer.
-- Completed onboarding layer.
-- Established mobile contribution workflow.
-- Created core specification documents.
-- Created survivability and legitimacy specifications.
-- Transitioned repository into specification-development phase.
-- Identified the need for a consolidated master specification.
-
-### Discoveries
-
-- Mobile-first workflows improve continuity reliability.
-- Repository alignment remains stable.
-- Specification hierarchy is emerging cleanly.
-- Governance-first development reduced future organizational risk.
-- A consolidated specification document will simplify future development and onboarding.
-
-### Repository Impact
-
-Files Added:
-
-- CHANGE_CONTROL.md
-- PROJECT_STRUCTURE.md
-- COLLABORATION_PROTOCOL.md
-- OPEN_QUESTIONS.md
-- FOUNDERS_NOTES.md
-- MOBILE_CONTRIBUTION_RULES.md
-- docs/AIC_SPECIFICATION.md
-- docs/CLONE_MODEL.md
-- docs/CLONE_LIFECYCLE.md
-- docs/SEMANTIC_EQUIVALENCE.md
-- docs/DRIFT_DETECTION.md
-- docs/GOVERNED_EXECUTION.md
-- docs/GLOSSARY.md
-- docs/CLONE_LEGITIMACY.md
-- docs/CLONE_SURVIVABILITY.md
-
-Files Modified:
-
-- SESSION_HANDOFF.md
-
-Files Removed:
-
-None
-
-### Current State
-
-Repository governance layer complete.
-
-Repository continuity layer complete.
-
-Repository onboarding layer complete.
-
-Mobile workflow established.
-
-Specification development actively underway.
-
-Specification consolidation planned.
-
-Repository remains in research and validation phase.
-
-### Next Build Goal
-
-Review all specification artifacts and create docs/AIC_MASTER_SPECIFICATION.md as the primary specification continuity document.
+    clean
 
 ---
 
-## Session End
+## Continuity Rule
 
-Timestamp: 2026-08-14
+Do not assume repository state from:
 
-Ready For Handoff:
+- Memory
+- Previous conversations
+- AI summaries
+- Screenshots
+- Stale handoff documents
 
-YES
+Read the repository.
 
----
-
-## Session Continuity Rule
-
-The SESSION_HANDOFF.md file is not a cumulative log.
-
-It is a complete state replacement document.
-
-Every update must replace the previous version in full.
-
-The current version represents the authoritative session state.
+The repository is the source of truth.
 
 ---
 
-## Update Procedure
+## Session Close
 
-Before updating SESSION_HANDOFF.md:
+Current repository phase:
 
-1. Review the current file completely.
-2. Preserve relevant continuity information.
-3. Merge new work into the updated version.
-4. Produce a complete replacement document.
+    Empirical Boundary Analysis
 
-Never generate partial updates.
+Current evidence baseline:
 
-Never generate patch-style updates.
+    109 passed
 
-Always work from the most recent repository version.
+Current implementation posture:
 
----
+    Observation preserved; enforcement not yet modified.
 
-## AI Contributor Rule
+Current next action:
 
-Future AI contributors must:
-
-Request the current SESSION_HANDOFF.md first.
-
-Then review:
-
-- MASTER_HANDOFF.md
-- CHANGE_CONTROL.md
-- PROJECT_STRUCTURE.md
-- MOBILE_CONTRIBUTION_RULES.md
-
-Before producing recommendations.
-
-Do not rely on memory.
-
-Do not rely on previous conversations.
-
-Do not rely on summaries.
-
-Repository artifacts remain authoritative.
-
----
-
-## Stevil Continuity Rule
-
-Continuity is preserved through repository artifacts.
-
-Not through memory.
-
-Not through conversation history.
-
-Not through assumptions.
-
-Repository artifacts win.
+    Continue testing the next mutation-capable boundary.
