@@ -6,6 +6,7 @@ from aic_harness.verifier import (
     audit,
     verify_receipt_integrity,
     verify_receipt_signature,
+    verify_terminal_receipt,
 )
 from aic_harness.evidence import (
     create_evidence_link,
@@ -962,4 +963,73 @@ def test_verify_evidence_chain_rejects_swapped_order():
     assert not verify_evidence_chain(
         [r2, r1],
         [l1, l2],
+    )
+
+def test_terminal_verifier_accepts_receipt_with_substituted_invariant():
+    from aic_harness.receipt import create_receipt
+    from aic_harness.crypto import generate_keypair
+    from aic_harness.ticket import create_ticket
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-TERMINAL-CONTINUITY-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-TERMINAL-CONTINUITY-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id="INV-ATTACKED",
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.invariant_id != receipt.invariant_id
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_receipt_signature(
+        receipt,
+        public_key,
+    )
+
+    assert verify_receipt_integrity(
+        receipt,
+    )
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
     )
