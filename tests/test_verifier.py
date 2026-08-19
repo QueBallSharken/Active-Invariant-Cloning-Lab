@@ -1,6 +1,10 @@
 
 from dataclasses import replace
 
+from aic_harness.crypto import generate_keypair
+from aic_harness.ticket import create_ticket
+from aic_harness.receipt import create_receipt
+
 from aic_harness.verifier import (
     VerificationError,
     audit,
@@ -966,9 +970,6 @@ def test_verify_evidence_chain_rejects_swapped_order():
     )
 
 def test_terminal_verifier_accepts_receipt_with_substituted_invariant():
-    from aic_harness.receipt import create_receipt
-    from aic_harness.crypto import generate_keypair
-    from aic_harness.ticket import create_ticket
 
     private_key, public_key = generate_keypair()
 
@@ -1033,3 +1034,974 @@ def test_terminal_verifier_accepts_receipt_with_substituted_invariant():
         receipt,
         public_key,
     )
+
+
+def test_aic_terminal_boundary_invariant_substitution_is_detectable():
+    """
+    Empirical AIC boundary experiment.
+
+    The authoritative ticket carries INV-001 while the terminal receipt
+    carries INV-ATTACKED. The receipt remains cryptographically valid
+    because the receipt signs its own supplied invariant identity.
+
+    This test records the observed boundary condition without changing
+    verifier behavior.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-REGRESSION-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-REGRESSION-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id="INV-ATTACKED",
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.invariant_id != receipt.invariant_id
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_audit_accepts_terminal_invariant_substitution():
+    """
+    Empirical AIC boundary experiment.
+
+    The authoritative ticket carries INV-001 while the terminal receipt
+    carries INV-ATTACKED. The complete receipt/evidence audit has no
+    ticket input and therefore verifies the receipt and evidence chain
+    without establishing invariant identity continuity to the ticket.
+    """
+    from aic_harness.evidence import create_evidence_link
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-AUDIT-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-AUDIT-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id="INV-ATTACKED",
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    link = create_evidence_link(receipt, None)
+
+    result = audit(
+        receipt,
+        public_key,
+        receipts=[receipt],
+        chain=[link],
+    )
+
+    assert ticket.invariant_id != receipt.invariant_id
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert result.receipt_signature_valid
+    assert result.receipt_integrity_valid
+    assert result.evidence_link_valid
+    assert result.evidence_chain_valid
+
+
+def test_aic_terminal_boundary_invariant_version_substitution_is_accepted():
+    """
+    Empirical AIC boundary experiment.
+
+    The authoritative ticket carries invariant version 1 while the
+    terminal receipt carries version 2. The receipt remains
+    cryptographically valid because the substituted version is part of
+    the receipt's own signed body.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-VERSION-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-VERSION-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version="2",
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.invariant_version != receipt.invariant_version
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_terminal_boundary_full_invariant_substitution_is_accepted():
+    """
+    Empirical AIC boundary experiment.
+
+    The authoritative ticket carries invariant INV-001 version 1 while
+    the terminal receipt carries INV-ATTACKED version 99. The receipt
+    remains independently cryptographically valid.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-FULL-INVARIANT-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-FULL-INVARIANT-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id="INV-ATTACKED",
+        invariant_version="99",
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.invariant_id != receipt.invariant_id
+    assert ticket.invariant_version != receipt.invariant_version
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_terminal_boundary_ticket_reference_substitution_is_accepted():
+    """
+    Empirical AIC boundary experiment.
+
+    The receipt references a different ticket_id while retaining the
+    authoritative ticket_hash. The terminal verifier has no ticket
+    object against which to establish ticket_id/hash correspondence.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-AUTHORITATIVE-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-TICKET-REFERENCE-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id="T-AIC-ATTACKED-999",
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.ticket_id != receipt.ticket_id
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_terminal_boundary_invariant_version_substitution_is_accepted():
+    """
+    Empirical AIC boundary experiment.
+
+    The authoritative ticket carries invariant version 1 while the
+    terminal receipt carries version 2. The receipt remains
+    cryptographically valid because the receipt signs its own supplied
+    invariant version.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-VERSION-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-VERSION-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version="2",
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.invariant_version != receipt.invariant_version
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_terminal_boundary_ticket_id_substitution_is_accepted():
+    """
+    Empirical AIC boundary experiment.
+
+    The receipt preserves the authoritative ticket hash but substitutes
+    the ticket identifier. The terminal verifier validates the receipt's
+    own signed fields and does not independently resolve ticket_id
+    against the authoritative ticket object.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-TICKET-ID-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-TICKET-ID-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id="T-ATTACKED",
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.ticket_id != receipt.ticket_id
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_terminal_boundary_payload_hash_substitution_is_accepted():
+    """
+    Empirical AIC boundary experiment.
+
+    The authoritative ticket carries one payload hash while the terminal
+    receipt carries a different payload hash but preserves the ticket hash.
+    The terminal verifier validates the receipt's own signed contents and
+    does not independently compare payload_hash against the authoritative
+    ticket.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-PAYLOAD-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-PAYLOAD-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash="ATTACKED-PAYLOAD-HASH",
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.payload_hash != receipt.payload_hash
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_terminal_boundary_tool_substitution_is_accepted():
+    """
+    Empirical AIC boundary experiment.
+
+    The authoritative ticket names one tool while the terminal receipt
+    names another. The receipt preserves the authoritative ticket hash.
+    The terminal verifier validates the receipt's own signed contents
+    without independently comparing tool identity against the ticket.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-TOOL-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "authorized-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-TOOL-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool="attacker-tool",
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.tool != receipt.tool
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_terminal_boundary_epoch_substitution_is_accepted():
+    """
+    Empirical AIC boundary experiment.
+
+    The authoritative ticket carries epoch 1 while the terminal receipt
+    carries epoch 2. The receipt preserves the authoritative ticket hash.
+    The terminal verifier validates the receipt's own signed contents
+    without independently comparing observed_epoch against the ticket.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-EPOCH-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-EPOCH-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=2,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.epoch != receipt.observed_epoch
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_terminal_boundary_nonce_substitution_is_accepted():
+    """
+    Empirical AIC boundary experiment.
+
+    The authoritative ticket carries nonce 1 while the terminal receipt
+    carries nonce 2. The receipt preserves the authoritative ticket hash.
+    The terminal verifier validates the receipt's own signed contents
+    without independently comparing nonce against the ticket.
+    """
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-NONCE-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-NONCE-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=2,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert ticket.nonce != receipt.nonce
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_terminal_receipt(
+        receipt,
+        public_key,
+    )
+
+
+def test_aic_terminal_boundary_state_hash_substitution_is_accepted():
+    """Empirical AIC boundary experiment: state hash substitution."""
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-STATE-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-STATE-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="ATTACKED-STATE",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert verify_terminal_receipt(receipt, public_key)
+
+
+def test_aic_terminal_boundary_authority_substitution_is_accepted():
+    """Empirical AIC boundary experiment: terminal authority substitution."""
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-AUTH-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-AUTH-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="ATTACKED-AUTHORITY",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert verify_terminal_receipt(receipt, public_key)
+
+
+def test_aic_terminal_boundary_reason_code_substitution_is_accepted():
+    """Empirical AIC boundary experiment: reason-code substitution."""
+
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-REASON-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-REASON-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id=ticket.invariant_id,
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="ATTACKED-REASON",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    assert verify_terminal_receipt(receipt, public_key)
+
+
+def test_aic_audit_accepts_invariant_substitution():
+    """
+    Empirical AIC boundary experiment.
+
+    The ticket carries INV-001 while the signed terminal receipt carries
+    INV-ATTACKED. The audit path verifies the receipt and evidence chain,
+    but does not independently compare receipt invariant identity with
+    the authoritative ticket.
+    """
+    private_key, public_key = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-AIC-AUDIT-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-AIC-AUDIT-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id="INV-ATTACKED",
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    link = create_evidence_link(receipt, None)
+
+    assert ticket.invariant_id != receipt.invariant_id
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    result = audit(
+        receipt,
+        public_key,
+        receipts=[receipt],
+        chain=[link],
+    )
+
+    assert result.receipt_signature_valid
+    assert result.receipt_integrity_valid
+    assert result.evidence_link_valid
+    assert result.evidence_chain_valid
