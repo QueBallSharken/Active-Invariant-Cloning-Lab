@@ -729,3 +729,62 @@ def test_receipt_with_substituted_invariant_still_builds_evidence_chain():
         [link],
     )
 
+
+
+def test_evidence_chain_accepts_receipt_with_invariant_substitution_from_ticket():
+    private_key, _ = generate_keypair()
+
+    ticket = create_ticket(
+        {
+            "ticket_id": "T-EVIDENCE-CONTINUITY-001",
+            "subject": "subject-1",
+            "object": "object-1",
+            "action": "mutate",
+            "payload_hash": "payload-hash",
+            "tool": "test-tool",
+            "epoch": 1,
+            "nonce": 1,
+            "invariant_id": "INV-001",
+            "invariant_version": "1",
+            "scope": "test",
+            "issued_at": "2026-08-17T00:00:00Z",
+        },
+        private_key,
+    )
+
+    receipt = create_receipt(
+        receipt_id="R-EVIDENCE-CONTINUITY-001",
+        timestamp="2026-08-17T00:00:01Z",
+        terminal_authority="terminal-1",
+        ticket_id=ticket.ticket_id,
+        ticket_hash=ticket.ticket_hash(),
+        invariant_id="INV-ATTACKED",
+        invariant_version=ticket.invariant_version,
+        payload_hash=ticket.payload_hash,
+        tool=ticket.tool,
+        observed_epoch=ticket.epoch,
+        observed_state_hash="state-hash",
+        nonce=ticket.nonce,
+        bound_verified=True,
+        fresh_verified=True,
+        authorized_verified=True,
+        invariant_verified=True,
+        composite_valid_predicate=True,
+        terminal_outcome="COMMIT",
+        reason_code="AUTHORIZED",
+        mutation_hash="mutation-hash",
+        causal_trace_id="trace-001",
+        sequence_number=1,
+        previous_receipt_hash=None,
+        private_key_hex=private_key,
+    )
+
+    link = create_evidence_link(receipt, None)
+
+    assert ticket.invariant_id != receipt.invariant_id
+    assert receipt.ticket_hash == ticket.ticket_hash()
+
+    assert verify_evidence_chain(
+        [receipt],
+        [link],
+    )
