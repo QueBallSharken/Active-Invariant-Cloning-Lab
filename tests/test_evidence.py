@@ -693,3 +693,39 @@ def make_receipt_with_key(
     )
 
     return receipt, public_key
+
+def test_evidence_chain_does_not_explicitly_bind_invariant_identity():
+    receipt = make_receipt()
+
+    link = create_evidence_link(
+        receipt,
+        None,
+    )
+
+    assert link.ticket_hash == receipt.ticket_hash
+
+    # EvidenceLink currently contains no invariant identity fields.
+    assert not hasattr(link, "invariant_id")
+    assert not hasattr(link, "invariant_version")
+
+
+def test_receipt_with_substituted_invariant_still_builds_evidence_chain():
+    from dataclasses import replace
+
+    receipt = make_receipt()
+
+    substituted = replace(
+        receipt,
+        invariant_id="INV-ATTACKED",
+    )
+
+    link = create_evidence_link(
+        substituted,
+        None,
+    )
+
+    assert verify_evidence_chain(
+        [substituted],
+        [link],
+    )
+
